@@ -1,0 +1,74 @@
+name: brew test-bot
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  # 作业1: 语法检查（可在任何平台运行，速度快）
+  syntax-check:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+      - name: Run syntax checks
+        run: brew test-bot --only-tap-syntax
+
+  # 作业2: Formula测试（在Linux和macOS上运行）
+  formulae-test:
+    needs: syntax-check # 依赖语法检查成功
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-15-intel, macos-26]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+      - name: Run formulae tests
+        # 此命令默认测试Formula，应跳过Cask。若仓库混合，可能需要更复杂的过滤逻辑。
+        run: brew test-bot --only-formulae
+        if: github.event_name == 'pull_request'
+
+  # 作业3: Cask专用测试（仅在macOS上运行）
+  cask-test:
+    needs: syntax-check # 依赖语法检查成功
+    # 使用条件判断：仅在提交中包含Cask文件时才运行此作业，避免不必要执行
+    if: contains(github.event.pull_request.title, 'cask') || github.event_name == 'push' # 此处需根据实际情况调整触发条件
+    strategy:
+      matrix:
+        # 仅使用macOS运行器
+        os: [macos-15-intel, macos-26]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+      - name: Test Casks
+        # 此步骤应专门针对Cask进行测试。`brew test-bot` 可能没有现成的 `--only-casks` 选项，
+        # 可能需要改为运行 `brew audit --cask <cask-name>` 或类似的定制脚本。
+        run: |
+          for cask_file in ./Casks/*.rb; do
+            brew audit --cask "$cask_file"
+          done
+        if: github.event_name == 'pull_request'
+      - name: Upload bottles as artifact
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottles_${{ matrix.os }}
+          path: '*.bottle.*'
+
+  # 可选作业4: 汇总与报告（在任何平台运行）
+  report-status:
+    needs: [syntax-check, formulae-test, cask-test]
+    runs-on: ubuntu-22.04
+    if: always() # 即使上游作业失败也运行，用于生成最终报告
+    steps:
+      - name: Summarize test results
+        run: echo "All required tests have completed."
