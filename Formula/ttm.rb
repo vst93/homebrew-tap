@@ -10,8 +10,8 @@ class Ttm < Formula
       url homepage + "/releases/download/#{version}/ttm-darwin-arm64.zip"
       sha256 "1d726ce214fad246a3911ed3f9c98988a66df1610d373a633659da7f1551d3a3"
     else
-      # url homepage + "/releases/download/#{version}/ttm-darwin-amd64.zip"
-      # sha256 "3208667d66aadfd560fa2d9b6171d266d0c5e5de69d2e9556aabea5cfd62c74f"
+      url homepage + "/releases/download/#{version}/ttm-darwin-amd64.zip"
+      sha256 "3208667d66aadfd560fa2d9b6171d266d0c5e5de69d2e9556aabea5cfd62c74f"
     end
   end
 
@@ -24,11 +24,6 @@ class Ttm < Formula
       sha256 "e795778242c04e3554e6a0f35ca934d507b294663f1af119604ec15fd35385a5"
     end
   end
-
-  # if RUBY_PLATFORM =~ /android/?
-  #   url homepage + "/releases/download/#{version}/ttm-android-arm64.zip"
-  #   sha256 "0d466f44afdab4484d6e6242d5329bbbfe0c38587573a082323c65509a97dbae"
-  # end
 
   if url == ""
     onoe "No release found for your platform"
