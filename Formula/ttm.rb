@@ -2,6 +2,8 @@ class TTM < Formula
   desc "Redis management tool designed for the terminal"
   homepage "https://github.com/vst93/ttm"
   version "0.1.0"
+
+  put RUBY_PLATFORM
   
   if OS.mac?
     if Hardware::CPU.arm?
