@@ -8,20 +8,20 @@ class V < Formula
   if OS.mac?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/v-darwin-arm64.zip"
-      sha256 "55845c4f7d52bdbdfa9e3ae5817844fbdce140d3319b1f3f17c2be713b096046"
+      sha256 "c0a1d614df93d900fdcf5b47c3f987fc3d4c60c52e2d91ff49b73a9d9a296b19"
     else
       url homepage + "/releases/download/#{version}/v-darwin-amd64.zip"
-      sha256 "f7621f3661de1500aab3fd4efde9df292d4a705281a4d147017b5596405cfb48"
+      sha256 "106b763f069b408074a312402d4d62f8ef19210dc8b1348ee0bbde7cdaa1ff37"
     end
   end
 
   if OS.linux?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/v-linux-arm64.zip"
-      sha256 "697d4fb9d17f6a55a5c50c6ed129d30e4dfae8cc56eece58cc1d22e5c17e2b1c"
+      sha256 "de0971e8a8da9d31c85b43cf776f85df20b19257b6b14ca6c11de01b91b1d8cb"
     else
       url homepage + "/releases/download/#{version}/v-linux-amd64.zip"
-      sha256 "1d33f0cede515912e2d5f2120b9976df0bb7fcb77ed2b1b53bb52319ba9c8063"
+      sha256 "2f8340287407ce90e53b2da5372f481daf38b5c22044e4402534dafdeee602a2"
     end
   end
 
