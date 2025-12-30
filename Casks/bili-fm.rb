@@ -2,8 +2,8 @@ cask "bili-fm" do
   arch arm: "arm64", intel: "amd64"
 
   version "1.4.1"
-  sha256 arm:   "2dbc79cc6b0e1e6becf02d66c22fe06a6554438f69f6b826058ce264f835c312",
-         intel: "ff3e5231bf0b58e996ecfa979349b8c238cc30ea5be9cc450d6e5071cf71f2a5"
+  sha256 arm:   "5813904cac05562b6cf024848cd8ba7ff3734308d7c8e33bebc738c32519e72f",
+         intel: "d5ce5403c239cd46680977b1fbcca611ef8b840e682bdf10f4e15d064c808e34"
 
   url "https://github.com/vst93/bili-fm/releases/download/#{version}/bili-FM-darwin-#{arch}.zip"
   name "bili-fm"
