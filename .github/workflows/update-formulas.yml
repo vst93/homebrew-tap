@@ -1,4 +1,4 @@
-name: Update Formulas
+name: Update Homebrew
 
 on:
   workflow_dispatch:
@@ -7,13 +7,17 @@ on:
         description: 'Formulas to update (comma-separated, e.g., "v,ttm,lazyrdm", or "all")'
         required: false
         default: 'all'
+      casks:
+        description: 'Casks to update (comma-separated, e.g., "bili-fm", or "all")'
+        required: false
+        default: 'all'
       dry_run:
         description: 'Dry run (true = only check versions, no changes)'
         required: false
         default: 'false'
 
 jobs:
-  update-formulas:
+  update-homebrew:
     runs-on: macos-latest
     outputs:
       changed: ${{ steps.update.outputs.changed }}
@@ -35,58 +39,110 @@ jobs:
         if: ${{ github.event.inputs.dry_run == 'true' }}
         run: |
           echo "=== DRY RUN MODE ==="
+          
+          # Check formulas
           if [ "${{ github.event.inputs.formulas }}" == "all" ]; then
             FORMULAS="v ttm lazyrdm"
           else
             FORMULAS=$(echo "${{ github.event.inputs.formulas }}" | tr ',' ' ')
           fi
-          echo "Checking: $FORMULAS"
+          echo "--- Formulas: $FORMULAS ---"
           for formula in $FORMULAS; do
-            echo "--- $formula ---"
+            echo "Formula: $formula"
             brew livecheck --formula $formula || true
           done
+          
+          # Check casks
+          if [ "${{ github.event.inputs.casks }}" == "all" ]; then
+            CASKS="bili-fm"
+          else
+            CASKS=$(echo "${{ github.event.inputs.casks }}" | tr ',' ' ')
+          fi
+          echo ""
+          echo "--- Casks: $CASKS ---"
+          for cask in $CASKS; do
+            echo "Cask: $cask"
+            brew livecheck --cask $cask || true
+          done
 
-      - name: Update formulas
+      - name: Update formulas and casks
         id: update
         if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
           FORMULAS: ${{ github.event.inputs.formulas }}
+          CASKS: ${{ github.event.inputs.casks }}
         run: |
-          echo "=== UPDATING FORMULAS ==="
+          echo "=== UPDATING HOMEBREW ==="
           
-          # Determine which formulas to update
+          # Determine formulas to update
           if [ "$FORMULAS" == "all" ]; then
             FORMULAS="v ttm lazyrdm"
           else
             FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
           fi
           
-          echo "Formulas to update: $FORMULAS"
+          # Determine casks to update
+          if [ "$CASKS" == "all" ]; then
+            CASKS="bili-fm"
+          else
+            CASKS=$(echo "$CASKS" | tr ',' ' ')
+          fi
           
-          # Run update script and capture output
-          UPDATE_OUTPUT=$(ruby scripts/update-formula.rb $FORMULAS 2>&1)
-          echo "$UPDATE_OUTPUT"
+          echo "Formulas: $FORMULAS"
+          echo "Casks: $CASKS"
+          echo ""
+          
+          # Run formula update script
+          if [ -n "$FORMULAS" ]; then
+            ruby scripts/update-formula.rb $FORMULAS
+          fi
+          
+          # Run cask update script
+          if [ -n "$CASKS" ]; then
+            ruby scripts/update-cask.rb $CASKS
+          fi
           
           # Check if any files were modified
-          if git diff --quiet -- 'Formula/*.rb'; then
+          if git diff --quiet -- 'Formula/*.rb' 'Casks/*.rb'; then
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "✓ All formulas are up to date"
+            echo "✓ All items are up to date"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "✓ Formulas have been updated"
+            echo "✓ Items have been updated"
           fi
 
-      - name: Audit formulas (skip known RuboCop bugs)
+      - name: Audit formulas and casks
         if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' }}
+        env:
+          FORMULAS: ${{ github.event.inputs.formulas }}
+          CASKS: ${{ github.event.inputs.casks }}
         run: |
-          # Determine which formulas to audit
-          if [ "${{ github.event.inputs.formulas }}" == "all" ]; then
+          # Determine formulas to audit
+          if [ "$FORMULAS" == "all" ]; then
             FORMULAS="v ttm lazyrdm"
           else
-            FORMULAS=$(echo "${{ github.event.inputs.formulas }}" | tr ',' ' ')
+            FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
           fi
-          # Skip FormulaAudit/Urls and PyPiUrls cops due to known RuboCop bugs with multi-platform formulas
-          brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $FORMULAS || true
+          
+          # Determine casks to audit
+          if [ "$CASKS" == "all" ]; then
+            CASKS="bili-fm"
+          else
+            CASKS=$(echo "$CASKS" | tr ',' ' ')
+          fi
+          
+          # Audit formulas (skip known RuboCop bugs)
+          if [ -n "$FORMULAS" ]; then
+            echo "--- Auditing Formulas ---"
+            brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $FORMULAS || true
+          fi
+          
+          # Audit casks (skip known RuboCop bugs)
+          if [ -n "$CASKS" ]; then
+            echo ""
+            echo "--- Auditing Casks ---"
+            brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $CASKS || true
+          fi
 
       - name: Show changed files
         if: ${{ steps.update.outputs.changed == 'true' }}
@@ -99,18 +155,17 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: bot/update-formulas
+          branch: bot/update-homebrew
           delete-branch: true
-          title: 'chore: update formula versions'
+          title: 'chore: update Homebrew versions'
           body: |
-            Automated formula version update
+            Automated Homebrew formula/cask version update
             
-            Updated formulas:
-            - v
-            - ttm
-            - lazyrdm
+            Updated:
+            - Formulas: v, ttm, lazyrdm
+            - Casks: bili-fm
             
-            Run `brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb` to verify.
+            Run `brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb` and `brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Casks/*.rb` to verify.
           labels: |
             automated
             homebrew
@@ -119,8 +174,8 @@ jobs:
         run: |
           echo "=== WORKFLOW SUMMARY ==="
           if [ "${{ steps.update.outputs.changed }}" == "true" ]; then
-            echo "✓ Formulas updated successfully"
+            echo "✓ Updates completed successfully"
             echo "A PR has been created with the changes."
           else
-            echo "✓ All formulas are up to date (no changes needed)"
+            echo "✓ All items are up to date (no changes needed)"
           fi

@@ -10,6 +10,11 @@ cask "bili-fm" do
   desc "Listen to Bilibili content in audio-only mode"
   homepage "https://github.com/vst93/bili-fm"
 
+  livecheck do
+    url "https://github.com/vst93/bili-fm/releases"
+    regex(/v?(\d+\.\d+(\.\d+)?)/i)
+  end
+
   app "bili-FM.app"
 
   zap trash: "~/Library/Application Support/bili-FM"

@@ -45,10 +45,16 @@ brew outdated --formula
 **Check for new versions:**
 ```bash
 # Check single formula
-brew livecheck --formula Formula/v.rb
+brew livecheck --formula v
 
 # Check all formulas
-brew livecheck --formula Formula/*.rb
+brew livecheck --formula v ttm lazyrdm
+
+# Check single cask
+brew livecheck --cask bili-fm
+
+# Check all casks
+brew livecheck --cask bili-fm
 ```
 
 **Auto-update formula (fetches latest version + SHA256):**
@@ -64,6 +70,22 @@ ruby scripts/update-formula.rb v ttm lazyrdm
 # 2. Downloads all platform assets (darwin-arm64, darwin-amd64, linux-arm64, linux-amd64)
 # 3. Calculates SHA256 for each asset
 # 4. Updates formula with new version + SHA256s
+# 5. Runs brew audit for verification
+```
+
+**Auto-update cask (fetches latest version + SHA256):**
+```bash
+# Update single cask
+ruby scripts/update-cask.rb bili-fm
+
+# Update multiple casks
+ruby scripts/update-cask.rb bili-fm another-cask
+
+# What it does:
+# 1. Fetches latest release from GitHub API
+# 2. Downloads darwin-arm64 and darwin-amd64 assets
+# 3. Calculates SHA256 for each architecture
+# 4. Updates cask with new version + SHA256s
 # 5. Runs brew audit for verification
 ```
 
@@ -83,8 +105,11 @@ class FormulaName < Formula
   desc "Brief description"
   homepage "https://github.com/org/project"
   version "x.y.z"
-  url ""
-  sha256 ""
+
+  livecheck do
+    url :stable
+    regex(/v?(\d+\.\d+(\.\d+)?)/i)
+  end
 
   if OS.mac?
     if Hardware::CPU.arm?
@@ -154,6 +179,11 @@ cask "app-name" do
   desc "Description"
   homepage "https://github.com/org/project"
 
+  livecheck do
+    url :stable
+    regex(/v?(\d+\.\d+(\.\d+)?)/i)
+  end
+
   app "App.app"
 
   zap trash: "~/Library/Application Support/app-name"
@@ -206,7 +236,8 @@ README.md     # Tap documentation
 ## Verification Checklist
 
 Before submitting changes:
-- [ ] `brew audit --formula Formula/*.rb` passes
+- [ ] `brew audit --formula Formula/*.rb` passes (use `--except FormulaAudit/Urls,FormulaAudit/PyPiUrls` to skip known RuboCop bugs)
+- [ ] `brew audit --cask Casks/*.rb` passes
 - [ ] SHA256 checksums verified for all platforms
 - [ ] URLs match expected GitHub release format
 - [ ] Ruby syntax valid: `ruby -c Formula/v.rb`
