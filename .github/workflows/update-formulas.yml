@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install homebrew/core curl
+          brew install curl
 
       - name: Check versions (dry run)
         if: ${{ github.event.inputs.dry_run == 'true' }}
