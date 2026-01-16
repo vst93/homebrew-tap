@@ -18,13 +18,31 @@ def run_cmd(cmd)
 end
 
 def fetch_latest_version(repo)
+  # Try gh CLI first (handles auth/rate limiting better)
+  stdout, stderr, status = Open3.capture3("gh release view --repo #{repo} --json tagName -q '.tagName' 2>/dev/null")
+  if status.success? && !stdout.strip.empty?
+    return stdout.strip
+  end
+
+  # Fallback to API
   uri = URI("https://api.github.com/repos/#{repo}/releases/latest")
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
+  http.open_timeout = 10
+  http.read_timeout = 10
+
   response = http.get(uri.request_uri)
-  tag = JSON.parse(response.body)["tag_name"]
-  # Return tag as-is (some repos use v prefix, some don't)
-  tag || raise("No release found for #{repo}")
+  case response.code
+  when "200"
+    tag = JSON.parse(response.body)["tag_name"]
+    return tag if tag
+  when "403", "404"
+    raise "GitHub API error (rate limit or repo not found): #{repo}"
+  else
+    raise "GitHub API returned HTTP #{response.code} for #{repo}"
+  end
+
+  raise "No release found for #{repo}"
 end
 
 def fetch_current_version(formula_path)
