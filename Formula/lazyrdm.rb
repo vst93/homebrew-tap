@@ -1,7 +1,7 @@
 class Lazyrdm < Formula
   desc "Redis management tool designed for the terminal"
   homepage "https://github.com/vst93/lazyrdm"
-  version "1.1"
+  version "1.0"
 
   livecheck do
     url :stable
