@@ -12,31 +12,42 @@ require "rubygems"
 REPO_PREFIX = "vst93"
 
 def fetch_latest_version(repo)
-  # Try gh CLI first (handles auth/rate limiting better)
-  stdout, stderr, status = Open3.capture3("gh release view --repo #{repo} --json tagName -q '.tagName' 2>/dev/null")
+  # Try gh CLI first (handles auth/rate limiting better in CI)
+  stdout, _stderr, status = Open3.capture3("gh release view --repo #{repo} --json tagName -q '.tagName' 2>/dev/null")
   if status.success? && !stdout.strip.empty?
     return stdout.strip
   end
 
-  # Fallback to API
+  # Fallback to API with token if available
   uri = URI("https://api.github.com/repos/#{repo}/releases/latest")
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   http.open_timeout = 10
   http.read_timeout = 10
 
-  response = http.get(uri.request_uri)
+  # Add authorization header if GITHUB_TOKEN is available
+  headers = {}
+  if ENV["GITHUB_TOKEN"]
+    headers["Authorization"] = "token #{ENV["GITHUB_TOKEN"]}"
+  end
+
+  response = http.get(uri.request_uri, headers)
   case response.code
   when "200"
     tag = JSON.parse(response.body)["tag_name"]
     return tag if tag
-  when "403", "404"
-    raise "GitHub API error (rate limit or repo not found): #{repo}"
+  when "403"
+    warn "GitHub API rate limited for #{repo}, skipping..."
+    return nil
+  when "404"
+    warn "Repository not found: #{repo}, skipping..."
+    return nil
   else
-    raise "GitHub API returned HTTP #{response.code} for #{repo}"
+    warn "GitHub API returned HTTP #{response.code} for #{repo}, skipping..."
+    return nil
   end
 
-  raise "No release found for #{repo}"
+  nil
 end
 
 def fetch_current_version(cask_path)
@@ -63,8 +74,15 @@ def update_cask(cask_name)
   repo = "#{REPO_PREFIX}/#{cask_name}"
   cask_path = "Casks/#{cask_name}.rb"
 
-  # Fetch versions
+  # Fetch latest version
   latest_version = fetch_latest_version(repo)
+
+  # Skip if could not fetch version (rate limit, not found, etc.)
+  if latest_version.nil?
+    puts "\n⚠ Cask #{cask_name}: Could not fetch latest version, skipping"
+    return
+  end
+
   current_version = fetch_current_version(cask_path)
 
   puts "Current version: #{current_version}"
