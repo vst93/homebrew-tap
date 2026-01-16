@@ -156,25 +156,24 @@ jobs:
           echo "=== CHANGED FILES ==="
           git status
 
-      - name: Create Pull Request
+      - name: Commit and push changes
         if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' }}
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: bot/update-homebrew
-          delete-branch: true
-          title: 'chore: update Homebrew versions'
-          body: |
-            Automated Homebrew formula/cask version update
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-            Updated:
-            - Formulas: v, ttm, lazyrdm
-            - Casks: bili-fm
+          # Create branch and commit changes
+          git checkout -b bot/update-homebrew
+          git add Formula/ Casks/
+          git commit -m "chore: update Homebrew versions" || echo "No changes to commit"
 
-            Run `brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb` and `brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Casks/*.rb` to verify.
-          labels: |
-            automated
-            homebrew
+          # Push using token
+          git push -u https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} bot/update-homebrew
+
+          echo ""
+          echo "✓ Changes pushed to branch: bot/update-homebrew"
+          echo "✓ Create a PR manually at: https://github.com/vst93/homebrew-tap/compare/main...bot/update-homebrew"
 
       - name: Summary
         run: |
