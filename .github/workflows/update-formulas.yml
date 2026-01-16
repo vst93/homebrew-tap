@@ -156,7 +156,7 @@ jobs:
           echo "=== CHANGED FILES ==="
           git status
 
-      - name: Commit and push changes
+      - name: Create PR and merge
         if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' }}
         run: |
           # Configure git
@@ -171,16 +171,36 @@ jobs:
           # Push using token
           git push -u https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} bot/update-homebrew
 
+          # Create PR
+          echo "Creating PR..."
+          PR_URL=$(gh pr create \
+            --title "chore: update Homebrew versions" \
+            --body "Automated Homebrew formula/cask version update
+
+Updated:
+- Formulas: v, ttm, lazyrdm
+- Casks: bili-fm
+
+Run \`brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb\` and \`brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Casks/*.rb\` to verify." \
+            --base main \
+            --head bot:update-homebrew 2>&1) || echo "PR may already exist"
+
           echo ""
-          echo "✓ Changes pushed to branch: bot/update-homebrew"
-          echo "✓ Create a PR manually at: https://github.com/vst93/homebrew-tap/compare/main...bot/update-homebrew"
+          echo "$PR_URL"
+
+          # Try to auto-merge the PR
+          echo ""
+          echo "Attempting to merge PR..."
+          gh pr merge --auto --merge --delete-branch bot/update-homebrew 2>&1 || echo "Auto-merge not available, PR created for manual review"
 
       - name: Summary
         run: |
           echo "=== WORKFLOW SUMMARY ==="
           if [ "${{ steps.update.outputs.changed }}" == "true" ]; then
-            echo "✓ Updates completed successfully"
-            echo "A PR has been created with the changes."
+            echo "✓ Updates completed"
+            echo "✓ PR created and merge attempted"
+            echo ""
+            echo "Check PR status at: https://github.com/vst93/homebrew-tap/pulls"
           else
             echo "✓ All items are up to date (no changes needed)"
           fi
