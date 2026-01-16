@@ -123,28 +123,28 @@ jobs:
           else
             FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
           fi
-          
+
           # Determine casks to audit
           if [ "$CASKS" == "all" ]; then
             CASKS="bili-fm"
           else
             CASKS=$(echo "$CASKS" | tr ',' ' ')
           fi
-          
-           # Audit formulas (skip known RuboCop bugs)
-           if [ -n "$FORMULAS" ]; then
-             echo "--- Auditing Formulas ---"
-             brew tap vst93/tap 2>/dev/null || true
-             brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $FORMULAS || true
-           fi
-           
-           # Audit casks (skip known RuboCop bugs)
-           if [ -n "$CASKS" ]; then
-             echo ""
-             echo "--- Auditing Casks ---"
-             brew tap vst93/tap 2>/dev/null || true
-             brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $CASKS || true
-           fi
+
+          # Audit formulas (skip known RuboCop bugs)
+          if [ -n "$FORMULAS" ]; then
+            echo "--- Auditing Formulas ---"
+            brew tap vst93/tap 2>/dev/null || true
+            brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $FORMULAS || true
+          fi
+
+          # Audit casks (skip known RuboCop bugs)
+          if [ -n "$CASKS" ]; then
+            echo ""
+            echo "--- Auditing Casks ---"
+            brew tap vst93/tap 2>/dev/null || true
+            brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $CASKS || true
+          fi
 
       - name: Show changed files
         if: ${{ steps.update.outputs.changed == 'true' }}
@@ -171,12 +171,12 @@ jobs:
           gh pr create \
             --title "chore: update Homebrew versions" \
             --body "Automated Homebrew formula/cask version update
-            
-Updated:
-- Formulas: v, ttm, lazyrdm
-- Casks: bili-fm
 
-Run \`brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb\` and \`brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Casks/*.rb\` to verify." \
+            Updated:
+            - Formulas: v, ttm, lazyrdm
+            - Casks: bili-fm
+
+            Run brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb and brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Casks/*.rb to verify." \
             --label "automated,homebrew" || echo "PR creation may have failed or PR already exists"
 
       - name: Summary
