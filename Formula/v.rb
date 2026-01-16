@@ -1,27 +1,34 @@
 class V < Formula
   desc "Gadgets under the terminal"
   homepage "https://github.com/vst93/v"
-  version "0.0.2"
+
+  # Enable livecheck to auto-detect new versions
+  livecheck do
+    url "https://github.com/vst93/v/releases"
+    regex(/v?(\d+\.\d+\.\d+)/i)
+  end
+
+  version "0.0.4"
   url ""
   sha256 ""
 
   if OS.mac?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/v-darwin-arm64.zip"
-      sha256 "c0a1d614df93d900fdcf5b47c3f987fc3d4c60c52e2d91ff49b73a9d9a296b19"
+      sha256 "6450b26cc0c44952eb91c744058031e740b489dd592d225c88e75a1288660c97"
     else
       url homepage + "/releases/download/#{version}/v-darwin-amd64.zip"
-      sha256 "106b763f069b408074a312402d4d62f8ef19210dc8b1348ee0bbde7cdaa1ff37"
+      sha256 "8a7e75f0ee06cd275ac8fc5bc8e6b9b255aa99994ae498bcc85807d5b4e49a07"
     end
   end
 
   if OS.linux?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/v-linux-arm64.zip"
-      sha256 "de0971e8a8da9d31c85b43cf776f85df20b19257b6b14ca6c11de01b91b1d8cb"
+      sha256 "d269545f371f6cf10aefddf60f40a3bf1e90bb0a9e471337ef70b5373f8a66b6"
     else
       url homepage + "/releases/download/#{version}/v-linux-amd64.zip"
-      sha256 "2f8340287407ce90e53b2da5372f481daf38b5c22044e4402534dafdeee602a2"
+      sha256 "77b42e060ce4ba412b89fdc0b16f5f7b3cbe04a12818925c7e83eb859203dad7"
     end
   end
 
