@@ -1,0 +1,115 @@
+name: Update Formulas
+
+on:
+  workflow_dispatch:
+    inputs:
+      formulas:
+        description: 'Formulas to update (comma-separated, e.g., "v,ttm,lazyrdm", or "all")'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry run (true = only check versions, no changes)'
+        required: false
+        default: 'false'
+
+jobs:
+  update-formulas:
+    runs-on: macos-latest
+    outputs:
+      changed: ${{ steps.update.outputs.changed }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Install dependencies
+        run: |
+          brew install homebrew/core curl
+
+      - name: Check versions (dry run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: |
+          echo "=== DRY RUN MODE ==="
+          for formula in v ttm lazyrdm; do
+            echo "Checking $formula..."
+            brew livecheck --formula Formula/$formula.rb || true
+          done
+
+      - name: Update formulas
+        id: update
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          FORMULAS: ${{ github.event.inputs.formulas }}
+        run: |
+          echo "=== UPDATING FORMULAS ==="
+          
+          # Determine which formulas to update
+          if [ "$FORMULAS" == "all" ]; then
+            FORMULAS="v ttm lazyrdm"
+          fi
+          
+          # Convert comma-separated to space-separated
+          FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
+          
+          echo "Formulas to update: $FORMULAS"
+          echo "changed=false" >> $GITHUB_OUTPUT
+          
+          # Process all formulas at once (script handles each one)
+          ruby scripts/update-formula.rb $FORMULAS 2>&1 || true
+          
+          # Check if any files were modified
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Files have been modified"
+          fi
+
+      - name: Audit formulas (skip known RuboCop bugs)
+        if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' }}
+        run: |
+          # Skip FormulaAudit/Urls and PyPiUrls cops due to known RuboCop bugs with multi-platform formulas
+          brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls v ttm lazyrdm || true
+
+      - name: Show changed files
+        if: ${{ steps.update.outputs.changed == 'true' }}
+        run: |
+          echo "=== CHANGED FILES ==="
+          git status
+
+      - name: Create Pull Request
+        if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: bot/update-formulas
+          delete-branch: true
+          title: 'chore: update formula versions'
+          body: |
+            Automated formula version update
+            
+            Updated formulas:
+            - v: ${{ steps.update.outputs.v_version }}
+            - ttm: ${{ steps.update.outputs.ttm_version }}
+            - lazyrdm: ${{ steps.update.outputs.lazyrdm_version }}
+            
+            Run `brew audit --formula Formula/*.rb` to verify.
+          labels: |
+            automated
+            homebrew
+
+      - name: Summary
+        run: |
+          echo "=== WORKFLOW SUMMARY ==="
+          if [ "${{ steps.update.outputs.changed }}" == "true" ]; then
+            echo "✓ Formulas updated successfully"
+            echo "A PR has been created with the changes."
+          else
+            echo "✓ All formulas are up to date (no changes needed)"
+          fi

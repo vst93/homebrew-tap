@@ -2,8 +2,12 @@ class [tpl_class_name] < Formula
   desc "[tpl_desc]"
   homepage "[tpl_homepage]"
   version "[tpl_version]"
-  url ""
-  sha256 ""
+
+  livecheck do
+    url :stable
+    regex(/v?(\d+\.\d+(\.\d+)?)/i)
+  end
+
   name "[tpl_name]"
 
   if OS.mac?

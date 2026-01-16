@@ -40,6 +40,33 @@ brew fetch --build-from-source Formula/v.rb
 brew outdated --formula
 ```
 
+### Version Automation (NEW!)
+
+**Check for new versions:**
+```bash
+# Check single formula
+brew livecheck --formula Formula/v.rb
+
+# Check all formulas
+brew livecheck --formula Formula/*.rb
+```
+
+**Auto-update formula (fetches latest version + SHA256):**
+```bash
+# Update single formula
+ruby scripts/update-formula.rb v
+
+# Update multiple formulas
+ruby scripts/update-formula.rb v ttm lazyrdm
+
+# What it does:
+# 1. Fetches latest release from GitHub API
+# 2. Downloads all platform assets (darwin-arm64, darwin-amd64, linux-arm64, linux-amd64)
+# 3. Calculates SHA256 for each asset
+# 4. Updates formula with new version + SHA256s
+# 5. Runs brew audit for verification
+```
+
 ## Code Style Guidelines
 
 ### Ruby Style (Formula Files)

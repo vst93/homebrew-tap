@@ -1,16 +1,12 @@
 class V < Formula
   desc "Gadgets under the terminal"
   homepage "https://github.com/vst93/v"
+  version "0.0.4"
 
-  # Enable livecheck to auto-detect new versions
   livecheck do
-    url "https://github.com/vst93/v/releases"
+    url :stable
     regex(/v?(\d+\.\d+\.\d+)/i)
   end
-
-  version "0.0.4"
-  url ""
-  sha256 ""
 
   if OS.mac?
     if Hardware::CPU.arm?
