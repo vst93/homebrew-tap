@@ -173,15 +173,19 @@ jobs:
 
           # Create PR
           echo "Creating PR..."
-          PR_URL=$(gh pr create \
-            --title "chore: update Homebrew versions" \
-            --body "Automated Homebrew formula/cask version update
+          cat > /tmp/pr_body.txt << 'EOF'
+Automated Homebrew formula/cask version update
 
 Updated:
 - Formulas: v, ttm, lazyrdm
 - Casks: bili-fm
 
-Run \`brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb\` and \`brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Casks/*.rb\` to verify." \
+Run `brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb` and `brew audit --cask --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Casks/*.rb` to verify.
+EOF
+
+          PR_URL=$(gh pr create \
+            --title "chore: update Homebrew versions" \
+            --body-file /tmp/pr_body.txt \
             --base main \
             --head bot:update-homebrew 2>&1) || echo "PR may already exist"
 
