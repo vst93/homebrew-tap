@@ -35,9 +35,15 @@ jobs:
         if: ${{ github.event.inputs.dry_run == 'true' }}
         run: |
           echo "=== DRY RUN MODE ==="
-          for formula in v ttm lazyrdm; do
-            echo "Checking $formula..."
-            brew livecheck --formula Formula/$formula.rb || true
+          if [ "${{ github.event.inputs.formulas }}" == "all" ]; then
+            FORMULAS="v ttm lazyrdm"
+          else
+            FORMULAS=$(echo "${{ github.event.inputs.formulas }}" | tr ',' ' ')
+          fi
+          echo "Checking: $FORMULAS"
+          for formula in $FORMULAS; do
+            echo "--- $formula ---"
+            brew livecheck --formula $formula || true
           done
 
       - name: Update formulas
@@ -51,31 +57,36 @@ jobs:
           # Determine which formulas to update
           if [ "$FORMULAS" == "all" ]; then
             FORMULAS="v ttm lazyrdm"
+          else
+            FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
           fi
           
-          # Convert comma-separated to space-separated
-          FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
-          
           echo "Formulas to update: $FORMULAS"
-          echo "changed=false" >> $GITHUB_OUTPUT
           
-          # Process all formulas at once (script handles each one)
-          ruby scripts/update-formula.rb $FORMULAS 2>&1 || true
+          # Run update script and capture output
+          UPDATE_OUTPUT=$(ruby scripts/update-formula.rb $FORMULAS 2>&1)
+          echo "$UPDATE_OUTPUT"
           
           # Check if any files were modified
-          if git diff --quiet; then
+          if git diff --quiet -- 'Formula/*.rb'; then
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No changes detected"
+            echo "✓ All formulas are up to date"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Files have been modified"
+            echo "✓ Formulas have been updated"
           fi
 
       - name: Audit formulas (skip known RuboCop bugs)
         if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' }}
         run: |
+          # Determine which formulas to audit
+          if [ "${{ github.event.inputs.formulas }}" == "all" ]; then
+            FORMULAS="v ttm lazyrdm"
+          else
+            FORMULAS=$(echo "${{ github.event.inputs.formulas }}" | tr ',' ' ')
+          fi
           # Skip FormulaAudit/Urls and PyPiUrls cops due to known RuboCop bugs with multi-platform formulas
-          brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls v ttm lazyrdm || true
+          brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls $FORMULAS || true
 
       - name: Show changed files
         if: ${{ steps.update.outputs.changed == 'true' }}
@@ -95,11 +106,11 @@ jobs:
             Automated formula version update
             
             Updated formulas:
-            - v: ${{ steps.update.outputs.v_version }}
-            - ttm: ${{ steps.update.outputs.ttm_version }}
-            - lazyrdm: ${{ steps.update.outputs.lazyrdm_version }}
+            - v
+            - ttm
+            - lazyrdm
             
-            Run `brew audit --formula Formula/*.rb` to verify.
+            Run `brew audit --formula --except FormulaAudit/Urls,FormulaAudit/PyPiUrls Formula/*.rb` to verify.
           labels: |
             automated
             homebrew
