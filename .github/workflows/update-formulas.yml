@@ -73,6 +73,8 @@ jobs:
         id: update
         if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FORMULAS: ${{ github.event.inputs.formulas }}
           CASKS: ${{ github.event.inputs.casks }}
         run: |

@@ -11,6 +11,10 @@ require "rubygems"
 
 REPO_PREFIX = "vst93"
 
+def github_token
+  ENV["GITHUB_TOKEN"] || ENV["GH_TOKEN"]
+end
+
 def run_cmd(cmd)
   stdout, stderr, status = Open3.capture3(cmd)
   raise "Command failed: #{cmd}\n#{stderr}" unless status.success?
@@ -33,8 +37,8 @@ def fetch_latest_version(repo)
 
   # Add authorization header if GITHUB_TOKEN is available
   headers = {}
-  if ENV["GITHUB_TOKEN"]
-    headers["Authorization"] = "token #{ENV["GITHUB_TOKEN"]}"
+  if github_token
+    headers["Authorization"] = "token #{github_token}"
   end
 
   response = http.get(uri.request_uri, headers)
