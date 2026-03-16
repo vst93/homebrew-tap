@@ -1,5 +1,5 @@
 class Ttm < Formula
-  desc "TUI Terminal Manager"
+  desc "Tiny Terminal Manager"
   homepage "https://github.com/vst93/ttm"
   version "0.3.1"
 
