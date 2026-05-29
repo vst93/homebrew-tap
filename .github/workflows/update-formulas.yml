@@ -171,7 +171,7 @@ jobs:
           git commit -m "chore: update Homebrew versions" || echo "No changes to commit"
 
           # Push using token
-          git push -u https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} bot/update-homebrew
+          git push -u https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} bot/update-homebrew
 
           # Create PR
           echo "Creating PR..."

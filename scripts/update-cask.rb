@@ -15,11 +15,22 @@ def github_token
   ENV["GITHUB_TOKEN"] || ENV["GH_TOKEN"]
 end
 
+def normalize_tag(tag)
+  tag.start_with?("v") ? tag[1..] : tag
+end
+
+def run_cmd(cmd)
+  stdout, stderr, status = Open3.capture3(cmd)
+  raise "Command failed: #{cmd}\n#{stderr}" unless status.success?
+  stdout.strip
+end
+
 def fetch_latest_version(repo)
   # Try gh CLI first (handles auth/rate limiting better in CI)
   stdout, _stderr, status = Open3.capture3("gh release view --repo #{repo} --json tagName -q '.tagName' 2>/dev/null")
   if status.success? && !stdout.strip.empty?
-    return stdout.strip
+    raw_tag = stdout.strip
+    return { version: normalize_tag(raw_tag), tag: raw_tag }
   end
 
   # Fallback to API with token if available
@@ -38,8 +49,8 @@ def fetch_latest_version(repo)
   response = http.get(uri.request_uri, headers)
   case response.code
   when "200"
-    tag = JSON.parse(response.body)["tag_name"]
-    return tag if tag
+    raw_tag = JSON.parse(response.body)["tag_name"]
+    return { version: normalize_tag(raw_tag), tag: raw_tag } if raw_tag
   when "403"
     warn "GitHub API rate limited for #{repo}, skipping..."
     return nil
@@ -79,13 +90,16 @@ def update_cask(cask_name)
   cask_path = "Casks/#{cask_name}.rb"
 
   # Fetch latest version
-  latest_version = fetch_latest_version(repo)
+  result = fetch_latest_version(repo)
 
   # Skip if could not fetch version (rate limit, not found, etc.)
-  if latest_version.nil?
+  if result.nil?
     puts "\n⚠ Cask #{cask_name}: Could not fetch latest version, skipping"
     return
   end
+
+  latest_version = result[:version]
+  tag = result[:tag]
 
   current_version = fetch_current_version(cask_path)
 
@@ -101,8 +115,8 @@ def update_cask(cask_name)
   puts "\n→ New version detected: #{current_version} → #{latest_version}"
 
   # Fetch SHA256 for both architectures
-  arm_url = "https://github.com/#{repo}/releases/download/#{latest_version}/#{cask_name}-darwin-arm64.zip"
-  intel_url = "https://github.com/#{repo}/releases/download/#{latest_version}/#{cask_name}-darwin-amd64.zip"
+  arm_url = "https://github.com/#{repo}/releases/download/#{tag}/#{cask_name}-darwin-arm64.zip"
+  intel_url = "https://github.com/#{repo}/releases/download/#{tag}/#{cask_name}-darwin-amd64.zip"
 
   sha256_arm = fetch_sha256(arm_url)
   sha256_intel = fetch_sha256(intel_url)
@@ -119,6 +133,12 @@ def update_cask(cask_name)
   content.gsub!(/sha256 arm:\s+"[a-f0-9]+",\s+intel:\s+"[a-f0-9]+"/) do |_match|
     %(sha256 arm:   "#{sha256_arm}",
          intel: "#{sha256_intel}")
+  end
+
+  # Update URL tag if the release tag has a different version format
+  # This handles cases where the tag uses a "v" prefix but version doesn't
+  content.gsub!(/releases\/download\/v?\d+\.\d+(\.\d+)?/) do |_match|
+    "releases/download/#{tag}"
   end
 
   File.write(cask_path, content)
