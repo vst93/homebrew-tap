@@ -1,7 +1,7 @@
 class Sfs < Formula
   desc "SmallFileSync - A WebDAV-based terminal file sync tool"
   homepage "https://github.com/vst93/sfs"
-  version "0.2.0"
+  version "0.0.1"
 
   livecheck do
     url :stable
