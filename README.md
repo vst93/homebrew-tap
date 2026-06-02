@@ -1,18 +1,36 @@
 # Vst93 Tap
 
-## How do I install these formulae?
+Homebrew tap for CLI tools and macOS apps by [vst93](https://github.com/vst93).
 
-`brew install vst93/tap/<formula>`
+## Available Formulae
 
-Or `brew tap vst93/tap` and then `brew install <formula>`.
+| Formula | Description |
+|---------|-------------|
+| **v** | Gadgets under the terminal |
+| **ttm** | Tiny Terminal Manager |
+| **lazyrdm** | Redis management tool for the terminal |
+| **sfs** | SmallFileSync - WebDAV-based file sync |
 
-Or, in a `brew bundle` `Brewfile`:
+## Available Casks
 
-```ruby
-tap "vst93/tap"
-brew "<formula>"
+| Cask | Description |
+|------|-------------|
+| **bili-fm** | Listen to Bilibili in audio-only mode |
+
+## Installation
+
+```bash
+brew tap vst93/tap
+brew install v              # or ttm, lazyrdm, sfs
+brew install --cask bili-fm
 ```
 
-## Documentation
+Or directly: `brew install vst93/tap/<formula>`
 
-`brew help`, `man brew` or check [Homebrew's documentation](https://docs.brew.sh).
+## Auto-Update
+
+Workflow triggered manually or by a Release. Default: commit directly to main. Set `create_pr: true` to create a PR instead.
+
+## Contributing
+
+See [AGENTS.md](AGENTS.md) for guidelines and version automation scripts.

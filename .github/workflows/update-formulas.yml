@@ -15,6 +15,10 @@ on:
         description: 'Dry run (true = only check versions, no changes)'
         required: false
         default: 'false'
+      create_pr:
+        description: 'Create a PR instead of committing directly to main'
+        required: false
+        default: 'false'
 
   workflow_run:
     workflows: ["Release"]
@@ -163,20 +167,29 @@ jobs:
           echo "=== CHANGED FILES ==="
           git status
 
-      - name: Create PR and merge
-        if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' }}
+      - name: Commit directly to main
+        if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.create_pr != 'true' }}
         run: |
-          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/ Casks/
+          git commit -m "chore: update Homebrew versions" || echo "No changes to commit"
+          git push
+
+      - name: Create PR and merge
+        if: ${{ steps.update.outputs.changed == 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.create_pr == 'true' }}
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Create branch and commit changes
-          git checkout -b bot/update-homebrew
+          BRANCH="bot/update-homebrew-$(date +%s)"
+          git checkout -b "$BRANCH"
           git add Formula/ Casks/
           git commit -m "chore: update Homebrew versions" || echo "No changes to commit"
 
           # Push using token
-          git push -u https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} bot/update-homebrew
+          git push -u https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} "$BRANCH"
 
           # Create PR
           echo "Creating PR..."
@@ -186,7 +199,7 @@ jobs:
             --title "chore: update Homebrew versions" \
             --body-file /tmp/pr_body.txt \
             --base main \
-            --head bot:update-homebrew 2>&1) || PR_URL="PR may already exist"
+            --head "$BRANCH" 2>&1) || PR_URL="PR may already exist"
 
           echo ""
           echo "$PR_URL"
@@ -211,9 +224,13 @@ jobs:
           echo "=== WORKFLOW SUMMARY ==="
           if [ "${{ steps.update.outputs.changed }}" == "true" ]; then
             echo "✓ Updates completed"
-            echo "✓ PR created and merge attempted"
-            echo ""
-            echo "Check PR status at: https://github.com/vst93/homebrew-tap/pulls"
+            if [ "${{ github.event.inputs.create_pr }}" == "true" ]; then
+              echo "✓ PR created and merge attempted"
+              echo ""
+              echo "Check PR status at: https://github.com/vst93/homebrew-tap/pulls"
+            else
+              echo "✓ Changes committed directly to main"
+            fi
           else
             echo "✓ All items are up to date (no changes needed)"
           fi
