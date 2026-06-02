@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       formulas:
-        description: 'Formulas to update (comma-separated, e.g., "v,ttm,lazyrdm", or "all")'
+        description: 'Formulas to update (comma-separated, e.g., "v,ttm,lazyrdm,sfs", or "all")'
         required: false
         default: 'all'
       casks:
@@ -15,6 +15,11 @@ on:
         description: 'Dry run (true = only check versions, no changes)'
         required: false
         default: 'false'
+
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: write
@@ -46,7 +51,7 @@ jobs:
           
           # Check formulas
           if [ "${{ github.event.inputs.formulas }}" == "all" ]; then
-            FORMULAS="v ttm lazyrdm"
+            FORMULAS="v ttm lazyrdm sfs"
           else
             FORMULAS=$(echo "${{ github.event.inputs.formulas }}" | tr ',' ' ')
           fi
@@ -81,14 +86,14 @@ jobs:
           echo "=== UPDATING HOMEBREW ==="
           
           # Determine formulas to update
-          if [ "$FORMULAS" == "all" ]; then
-            FORMULAS="v ttm lazyrdm"
+          if [ -z "$FORMULAS" ] || [ "$FORMULAS" == "all" ]; then
+            FORMULAS="v ttm lazyrdm sfs"
           else
             FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
           fi
           
           # Determine casks to update
-          if [ "$CASKS" == "all" ]; then
+          if [ -z "$CASKS" ] || [ "$CASKS" == "all" ]; then
             CASKS="bili-fm"
           else
             CASKS=$(echo "$CASKS" | tr ',' ' ')
@@ -124,14 +129,14 @@ jobs:
           CASKS: ${{ github.event.inputs.casks }}
         run: |
           # Determine formulas to audit
-          if [ "$FORMULAS" == "all" ]; then
-            FORMULAS="v ttm lazyrdm"
+          if [ -z "$FORMULAS" ] || [ "$FORMULAS" == "all" ]; then
+            FORMULAS="v ttm lazyrdm sfs"
           else
             FORMULAS=$(echo "$FORMULAS" | tr ',' ' ')
           fi
 
           # Determine casks to audit
-          if [ "$CASKS" == "all" ]; then
+          if [ -z "$CASKS" ] || [ "$CASKS" == "all" ]; then
             CASKS="bili-fm"
           else
             CASKS=$(echo "$CASKS" | tr ',' ' ')
