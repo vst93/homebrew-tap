@@ -78,9 +78,19 @@ def version_gt?(v1, v2)
   Gem::Version.new(v1) > Gem::Version.new(v2)
 end
 
-def fetch_sha256(url)
+def fetch_sha256(repo, tag, formula_name, platform)
+  # Try fetching .sha256 file first (much faster, no need to download the full zip)
+  sha_url = "https://github.com/#{repo}/releases/download/#{tag}/#{formula_name}-#{platform}.zip.sha256"
+  stdout, _stderr, status = Open3.capture3("curl -fsSL --connect-timeout 10 --max-time 15 #{sha_url} 2>/dev/null")
+  if status.success? && stdout.strip.match?(/^[a-f0-9]{64}$/)
+    puts "  #{platform}: #{stdout.strip} (from .sha256 file)"
+    return stdout.strip
+  end
+
+  # Fallback: download the zip and compute SHA256
+  url = "https://github.com/#{repo}/releases/download/#{tag}/#{formula_name}-#{platform}.zip"
   puts "  Downloading: #{url}"
-  stdout, _stderr, status = Open3.capture3("curl -fsSL -o /dev/null \"#{url}\" && curl -fsSL \"#{url}\" | shasum -a 256 | cut -d' ' -f1")
+  stdout, _stderr, status = Open3.capture3("curl -fsSL --connect-timeout 10 --max-time 60 -o /dev/null \"#{url}\" && curl -fsSL --connect-timeout 10 --max-time 120 \"#{url}\" | shasum -a 256 | cut -d' ' -f1")
   raise "Download failed: #{url}" unless status.success?
   sha = stdout.strip
   raise "Empty SHA256 for: #{url}" if sha.empty?
@@ -120,9 +130,7 @@ def update_formula(formula_name)
   sha256s = {}
 
   platforms.each do |platform|
-    url = "https://github.com/#{repo}/releases/download/#{tag}/#{formula_name}-#{platform}.zip"
-    sha256s[platform] = fetch_sha256(url)
-    puts "  #{platform}: #{sha256s[platform]}"
+    sha256s[platform] = fetch_sha256(repo, tag, formula_name, platform)
   end
 
   # Read current formula
@@ -132,9 +140,19 @@ def update_formula(formula_name)
   content.sub!(/version "v?\d+\.\d+(\.\d+)?"/, %(version "#{latest_version}"))
 
   # Update SHA256s - generic pattern for all sha256 assignments
+  # Matches literal 64-char hex strings: sha256 "abcdef..."
+  # Also matches placeholder patterns like sha256 "0" * 64
   sha256_values = sha256s.values.to_a
   count = 0
+  # First pass: replace literal hex strings
   content.gsub!(/sha256 "[a-f0-9]{64}"/) do |match|
+    break match if count >= sha256_values.length
+    result = %(sha256 "#{sha256_values[count]}")
+    count += 1
+    result
+  end
+  # Second pass: replace "0" * 64 placeholder patterns
+  content.gsub!(/sha256 "0" \* 64/) do |match|
     break match if count >= sha256_values.length
     result = %(sha256 "#{sha256_values[count]}")
     count += 1
