@@ -1,7 +1,7 @@
 class Sfs < Formula
   desc "SmallFileSync - A WebDAV-based terminal file sync tool"
   homepage "https://github.com/vst93/sfs"
-  version "0.1.4"
+  version "0.1.5"
 
   livecheck do
     url :stable
@@ -11,20 +11,20 @@ class Sfs < Formula
   if OS.mac?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/sfs-darwin-arm64.zip"
-      sha256 "1b67d754be865bb8e0e0cf485d6dc82aa37f2388292eaf5378574ee5882eeeb2"
+      sha256 "1e57fac7ba18a90511cad509f0c6ab13854f7d5000cc39f2dd4d537d842d1a46"
     else
       url homepage + "/releases/download/#{version}/sfs-darwin-amd64.zip"
-      sha256 "aa38fa3dbbdaa3162c94ca784a820c15d5c84cad3a08c4948707fc23a0660f38"
+      sha256 "7c86407882c1d094e2e1a0103ff7c635fa44f80fd460b67357201d46d75b17c9"
     end
   end
 
   if OS.linux?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/sfs-linux-arm64.zip"
-      sha256 "af8ab48b891618b742149a2b349bafc4eff70fb3f26bb24068a5cd1af1dddc79"
+      sha256 "cea44e7e78c4e676337d82e229e4e1a1c0d8d09af792a14af243a30ce1b97933"
     else
       url homepage + "/releases/download/#{version}/sfs-linux-amd64.zip"
-      sha256 "f194200819e5da6802e168e8897d478ed679b085d7042ff1145fb2d807c147ac"
+      sha256 "d8accc36a87e3a6138fc35a3f0f97bd3ed961430d53ac4ce3046fb59eb6c50ad"
     end
   end
 
