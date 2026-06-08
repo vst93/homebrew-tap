@@ -1,7 +1,7 @@
 class Ttm < Formula
   desc "Tiny Terminal Manager"
   homepage "https://github.com/vst93/ttm"
-  version "0.3.8"
+  version "0.3.10"
 
   livecheck do
     url :stable
@@ -11,20 +11,20 @@ class Ttm < Formula
   if OS.mac?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/ttm-darwin-arm64.zip"
-      sha256 "2826d5e8984faf4193c9f75ca8a1574e63420a4c7fac986667b25bff294a97d2"
+      sha256 "83a7c1735746ba0c486619a0f65374ff09bc1f78faad3bae6224cca003ff10ef"
     else
       url homepage + "/releases/download/#{version}/ttm-darwin-amd64.zip"
-      sha256 "99f0d58689dfb9ae18b535ab8647b19c0b23a64f238fa83bae82aead8e259691"
+      sha256 "63279b31d962f8298f61d909ea6ffa278d18776ba54a114812498366a27779ca"
     end
   end
 
   if OS.linux?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/ttm-linux-arm64.zip"
-      sha256 "a93ad38d982d419a0cd69443b9f153f58085a92435f7250b2711cf9173da2940"
+      sha256 "574c415c83c4db035f4ed9302de374f931f5c9998da45ece940d1fffb23c3f84"
     else
       url homepage + "/releases/download/#{version}/ttm-linux-amd64.zip"
-      sha256 "800644fc75cb5c83339696e8507994b45183922cf25e0025430c04a54fb67d2b"
+      sha256 "20ea23b21efe07106b7b1e72600065695b625a703d0caa7c5bf3f6732d023121"
     end
   end
 
