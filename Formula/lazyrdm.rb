@@ -1,7 +1,7 @@
 class Lazyrdm < Formula
   desc "Redis management tool designed for the terminal"
   homepage "https://github.com/vst93/lazyrdm"
-  version "1.1"
+  version "1.2.1"
 
   livecheck do
     url :stable
@@ -11,20 +11,20 @@ class Lazyrdm < Formula
   if OS.mac?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/lazyrdm-darwin-arm64.zip"
-      sha256 "6aa3b16e9b02dd54317b147214ef433dae006ba52ce6465a90d37033cd6a64fb"
+      sha256 "f422a0561859fa20d1a13f2a04aa97a5ab02f350ab26e265732e5e2bd81483e2"
     else
       url homepage + "/releases/download/#{version}/lazyrdm-darwin-amd64.zip"
-      sha256 "e543f551935bbd8a1fa8589681be7c6ac458f3079ead4ca70272835bbe63bbc5"
+      sha256 "db30445c42d53779c297cc07ca87318bc13e8f96d2f9414a354039cc075790a5"
     end
   end
 
   if OS.linux?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/lazyrdm-linux-arm64.zip"
-      sha256 "d634069e8f9f4e1390f08ad03d60b31b89584b4f2e8c144a7bea6ecd8491bf66"
+      sha256 "e3df3ebf75b5c89e0bb76255f2bc974b69281c4eacf09de7a88da6e48a435b28"
     else
       url homepage + "/releases/download/#{version}/lazyrdm-linux-amd64.zip"
-      sha256 "c1b7c0206ceadc1e799673495eabcc9fd9c08257cf36e31d09c8c222bb83b2dc"
+      sha256 "a944f70ef98d6a9f576ad6e7a958e17965169fc230eb862cbb9a24c42de1e2b8"
     end
   end
 
