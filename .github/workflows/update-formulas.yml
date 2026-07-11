@@ -21,7 +21,7 @@ on:
         default: 'false'
 
   workflow_run:
-    workflows: ["Release"]
+    workflows: ["Wails build"]
     types: [completed]
     branches: [main]
 
