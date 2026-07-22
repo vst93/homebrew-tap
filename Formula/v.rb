@@ -1,7 +1,7 @@
 class V < Formula
   desc "Gadgets under the terminal"
   homepage "https://github.com/vst93/v"
-  version "0.0.5"
+  version "0.0.6"
 
   livecheck do
     url :stable
@@ -11,20 +11,20 @@ class V < Formula
   if OS.mac?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/v-darwin-arm64.zip"
-      sha256 "c142293f13def7aea92ec3ef7de7a30e24353bf8af72bb225182df357136a081"
+      sha256 "71bc17a723ced0a5c9060f760160d4d635c359ae070e8f556940c88336fdd489"
     else
       url homepage + "/releases/download/#{version}/v-darwin-amd64.zip"
-      sha256 "be48f6f5993c8758694db14c7529446e6928e369b1a5a1b97be73938e1ec6762"
+      sha256 "5751759bc3efa280a39696c9b1c7f8aed44b3cfafe2f27055efaa9f4593f5590"
     end
   end
 
   if OS.linux?
     if Hardware::CPU.arm?
       url homepage + "/releases/download/#{version}/v-linux-arm64.zip"
-      sha256 "d820cf7e4429caf0c189bbeed553aac098c231883a6adae4fb74eb5d0458d8c1"
+      sha256 "0041968b71520162187e8fd4a36954e66540a49f6a412a8ccca917b1df8c8752"
     else
       url homepage + "/releases/download/#{version}/v-linux-amd64.zip"
-      sha256 "367922ee794b749e6e524ae16c7da6ae70fb97ebec28ed8952a45ad246ba0e3f"
+      sha256 "f18ad12b16bef80a4ff07fad9f3fcc4bdf3f404a02eb5ee381d94a84ba38fb7b"
     end
   end
 
