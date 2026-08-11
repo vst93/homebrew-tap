@@ -20,11 +20,6 @@ on:
         required: false
         default: 'false'
 
-  workflow_run:
-    workflows: ["Release"]
-    types: [completed]
-    branches: [main]
-
 permissions:
   contents: write
   pull-requests: write
