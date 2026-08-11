@@ -95,10 +95,10 @@ end
 def detect_asset_pattern(cask_path)
   content = File.read(cask_path)
   # Tauri pattern: bili-FM-#{version}-macos-#{arch}.dmg
-  if content.match?(/#{Regex.escape("macos")}.*\.dmg/)
+  if content.match?(/macos.*\.dmg/)
     :tauri
   # Legacy Wails pattern: AppName-darwin-#{arch}.zip
-  elsif content.match?(/#{Regex.escape("darwin")}.*\.zip/)
+  elsif content.match?(/darwin.*\.zip/)
     :legacy
   else
     # Default to tauri for new casks
