@@ -3,6 +3,11 @@
 
 # Update Homebrew cask with latest version and SHA256 checksums
 # Usage: ruby scripts/update-cask.rb <cask_name>
+#
+# Supports two asset naming patterns:
+# - Tauri: AppName-VERSION-macos-ARCH.dmg
+# - Legacy Wails: AppName-darwin-ARCH.zip
+# The pattern is auto-detected from the cask file's URL line.
 
 require "json"
 require "net/http"
@@ -85,6 +90,34 @@ def fetch_sha256(url)
   sha
 end
 
+# Detect asset naming pattern from the cask file's URL line.
+# Returns :tauri (dmg with version) or :legacy (zip without version).
+def detect_asset_pattern(cask_path)
+  content = File.read(cask_path)
+  # Tauri pattern: bili-FM-#{version}-macos-#{arch}.dmg
+  if content.match?(/#{Regex.escape("macos")}.*\.dmg/)
+    :tauri
+  # Legacy Wails pattern: AppName-darwin-#{arch}.zip
+  elsif content.match?(/#{Regex.escape("darwin")}.*\.zip/)
+    :legacy
+  else
+    # Default to tauri for new casks
+    :tauri
+  end
+end
+
+# Build the download URL for a given architecture.
+# Tauri:   https://github.com/REPO/releases/download/TAG/AppName-TAG-macos-ARCH.dmg
+# Legacy:  https://github.com/REPO/releases/download/TAG/AppName-darwin-ARCH.zip
+def build_asset_url(repo, tag, app_name, arch, pattern)
+  case pattern
+  when :tauri
+    "https://github.com/#{repo}/releases/download/#{tag}/#{app_name}-#{tag}-macos-#{arch}.dmg"
+  when :legacy
+    "https://github.com/#{repo}/releases/download/#{tag}/#{app_name}-darwin-#{arch}.zip"
+  end
+end
+
 def update_cask(cask_name)
   repo = "#{REPO_PREFIX}/#{cask_name}"
   cask_path = "Casks/#{cask_name}.rb"
@@ -112,16 +145,32 @@ def update_cask(cask_name)
     return
   end
 
-  puts "\n→ New version detected: #{current_version} → #{latest_version}"
+  puts "\n-> New version detected: #{current_version} -> #{latest_version}"
 
-  # Fetch SHA256 for both architectures
-  arm_url = "https://github.com/#{repo}/releases/download/#{tag}/#{cask_name}-darwin-arm64.zip"
-  intel_url = "https://github.com/#{repo}/releases/download/#{tag}/#{cask_name}-darwin-amd64.zip"
+  # Detect asset naming pattern
+  pattern = detect_asset_pattern(cask_path)
+  puts "  Asset pattern: #{pattern}"
 
-  sha256_arm = fetch_sha256(arm_url)
-  sha256_intel = fetch_sha256(intel_url)
-  puts "  arm64:   #{sha256_arm}"
-  puts "  amd64:   #{sha256_intel}"
+  # Determine app name from repo (e.g., "bili-fm" -> "bili-FM")
+  # Read the app name from the cask file's url or app line
+  cask_content = File.read(cask_path)
+  app_name_match = cask_content.match(%r{releases/download/[^/]+/([A-Za-z]+-?[A-Za-z]*)-})
+  app_name = app_name_match ? app_name_match[1] : cask_name.capitalize
+
+  # Map arch keys: cask uses arm/intel, assets use apple-silicon/intel (Tauri) or arm64/amd64 (legacy)
+  case pattern
+  when :tauri
+    archs = { arm: "apple-silicon", intel: "intel" }
+  when :legacy
+    archs = { arm: "arm64", intel: "amd64" }
+  end
+
+  sha256s = {}
+  archs.each do |key, arch_suffix|
+    url = build_asset_url(repo, tag, app_name, arch_suffix, pattern)
+    sha256s[key] = fetch_sha256(url)
+    puts "  #{key} (#{arch_suffix}): #{sha256s[key]}"
+  end
 
   # Read current cask
   content = File.read(cask_path)
@@ -131,14 +180,22 @@ def update_cask(cask_name)
 
   # Update SHA256s - match the exact pattern and preserve formatting
   content.gsub!(/sha256 arm:\s+"[a-f0-9]+",\s+intel:\s+"[a-f0-9]+"/) do |_match|
-    %(sha256 arm:   "#{sha256_arm}",
-         intel: "#{sha256_intel}")
+    %(sha256 arm:   "#{sha256s[:arm]}",
+         intel: "#{sha256s[:intel]}")
   end
 
-  # Update URL tag if the release tag has a different version format
-  # This handles cases where the tag uses a "v" prefix but version doesn't
-  content.gsub!(/releases\/download\/v?\d+\.\d+(\.\d+)?/) do |_match|
-    "releases/download/#{tag}"
+  # Update URL - handle both Tauri and legacy patterns
+  case pattern
+  when :tauri
+    # Tauri: AppName-TAG-macos-ARCH.dmg (tag may differ from version if v-prefixed)
+    content.gsub!(%r{releases/download/v?\d+\.\d+(\.\d+)?/}) do |_match|
+      "releases/download/#{tag}/"
+    end
+  when :legacy
+    # Legacy: AppName-darwin-ARCH.zip
+    content.gsub!(%r{releases/download/v?\d+\.\d+(\.\d+)?/}) do |_match|
+      "releases/download/#{tag}/"
+    end
   end
 
   File.write(cask_path, content)

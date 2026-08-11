@@ -107,7 +107,7 @@ class FormulaName < Formula
   version "x.y.z"
 
   livecheck do
-    url :stable
+    url "https://github.com/org/project/releases"
     regex(/v?(\d+\.\d+(\.\d+)?)/i)
   end
 
@@ -168,19 +168,19 @@ end
 **Structure:**
 ```ruby
 cask "app-name" do
-  arch arm: "arm64", intel: "amd64"
+  arch arm: "apple-silicon", intel: "intel"
 
   version "x.y.z"
   sha256 arm:   "...",
          intel: "..."
 
-  url "https://github.com/org/project/releases/download/#{version}/app-name-darwin-#{arch}.zip"
+  url "https://github.com/org/project/releases/download/#{version}/AppName-#{version}-macos-#{arch}.dmg"
   name "App Name"
   desc "Description"
   homepage "https://github.com/org/project"
 
   livecheck do
-    url :stable
+    url "https://github.com/org/project/releases"
     regex(/v?(\d+\.\d+(\.\d+)?)/i)
   end
 
