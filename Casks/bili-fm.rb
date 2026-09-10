@@ -1,9 +1,9 @@
 cask "bili-fm" do
   arch arm: "apple-silicon", intel: "intel"
 
-  version "2.0.10"
-  sha256 arm:   "755a1e10957da01025c9e3c61f5803caee024da9010d6c97908c4fa6c723893c",
-         intel: "3f38de3139eb4e7aaeb062408aee3800f903c8c1dded795dc4e036a58fa52ae9"
+  version "2.0.13"
+  sha256 arm:   "a4d040a09f1b2307d75607a909095f18c2620b9b3a239aa88d2ff87bb139d005",
+         intel: "43de53051517e3289a2d129070db85e28336820d94144a703880fce0b60234b5"
 
   url "https://github.com/vst93/bili-fm/releases/download/#{version}/bili-FM-#{version}-macos-#{arch}.dmg"
   name "bili-fm"
