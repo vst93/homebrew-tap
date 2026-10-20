@@ -1,11 +1,11 @@
 cask "bili-fm" do
   arch arm: "apple-silicon", intel: "intel"
 
-  version "2.0.37"
-  sha256 arm:   "8d4861561b6c2c7717ad14d1da480f968ec7b11b676e602137c7f27de7f6cbac",
-         intel: "3ab96e4eece63a4d7b4bfa11d5372383e3e7bfccfa28654729ced183376719f1"
+  version "3.1.1"
+  sha256 arm:   "4aad8a5d2dcbdd0a4eb903a28a7868da00796d1e7b33472f07fce15cacd7498f",
+         intel: "ba54a6be1c5cba7a263e7bbb516b9aadf5980f35da283aa1dd1fd33a286265c3"
 
-  url "https://github.com/vst93/bili-fm/releases/download/#{version}/bili-FM-#{version}-macos-#{arch}.dmg"
+  url "https://github.com/vst93/bili-fm/releases/download/mygo-v#{version}/bili-FM-#{version}-macos-#{arch}.dmg"
   name "bili-fm"
   desc "Listen to Bilibili content in audio-only mode"
   homepage "https://github.com/vst93/bili-fm"
