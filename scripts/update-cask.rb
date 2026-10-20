@@ -20,8 +20,14 @@ def github_token
   ENV["GITHUB_TOKEN"] || ENV["GH_TOKEN"]
 end
 
+# Extract a Gem::Version-parsable version from a release tag.
+# Handles plain "1.2.3", "v1.2.3", and product-prefixed tags such as
+# "mygo-v3.1.1" (bili-fm switched to mygo native builds and publishes
+# releases under a "mygo-v*" tag).
 def normalize_tag(tag)
-  tag.start_with?("v") ? tag[1..] : tag
+  match = tag.match(/(\d+(?:\.\d+)*)/)
+  raise "Could not parse version from tag: #{tag}" unless match
+  match[1]
 end
 
 def run_cmd(cmd)
@@ -106,13 +112,23 @@ def detect_asset_pattern(cask_path)
   end
 end
 
+# Prefix a release tag carries on top of the bare version, e.g.
+# tag "mygo-v3.1.1" with version "3.1.1" -> "mygo-v". Asset filenames use the
+# bare version, only the download path uses the full tag.
+def tag_prefix(tag, version)
+  suffix = version.to_s
+  return "" unless tag.end_with?(suffix)
+
+  tag[0...-suffix.length]
+end
+
 # Build the download URL for a given architecture.
-# Tauri:   https://github.com/REPO/releases/download/TAG/AppName-TAG-macos-ARCH.dmg
+# Tauri:   https://github.com/REPO/releases/download/TAG/AppName-VERSION-macos-ARCH.dmg
 # Legacy:  https://github.com/REPO/releases/download/TAG/AppName-darwin-ARCH.zip
-def build_asset_url(repo, tag, app_name, arch, pattern)
+def build_asset_url(repo, tag, version, app_name, arch, pattern)
   case pattern
   when :tauri
-    "https://github.com/#{repo}/releases/download/#{tag}/#{app_name}-#{tag}-macos-#{arch}.dmg"
+    "https://github.com/#{repo}/releases/download/#{tag}/#{app_name}-#{version}-macos-#{arch}.dmg"
   when :legacy
     "https://github.com/#{repo}/releases/download/#{tag}/#{app_name}-darwin-#{arch}.zip"
   end
@@ -167,7 +183,7 @@ def update_cask(cask_name)
 
   sha256s = {}
   archs.each do |key, arch_suffix|
-    url = build_asset_url(repo, tag, app_name, arch_suffix, pattern)
+    url = build_asset_url(repo, tag, latest_version, app_name, arch_suffix, pattern)
     sha256s[key] = fetch_sha256(url)
     puts "  #{key} (#{arch_suffix}): #{sha256s[key]}"
   end
@@ -184,18 +200,12 @@ def update_cask(cask_name)
          intel: "#{sha256s[:intel]}")
   end
 
-  # Update URL - handle both Tauri and legacy patterns
-  case pattern
-  when :tauri
-    # Tauri: AppName-TAG-macos-ARCH.dmg (tag may differ from version if v-prefixed)
-    content.gsub!(%r{releases/download/v?\d+\.\d+(\.\d+)?/}) do |_match|
-      "releases/download/#{tag}/"
-    end
-  when :legacy
-    # Legacy: AppName-darwin-ARCH.zip
-    content.gsub!(%r{releases/download/v?\d+\.\d+(\.\d+)?/}) do |_match|
-      "releases/download/#{tag}/"
-    end
+  # Update the tag inside the download path. Kept as the "#{version}"
+  # interpolation so the cask still tracks `version`, prefixed with whatever
+  # the release tag carries ("" for plain tags, "mygo-v" for bili-fm).
+  prefix = tag_prefix(tag, latest_version)
+  content.sub!(%r{releases/download/[^/]+/}) do
+    "releases/download/#{prefix}" + '#{version}/'
   end
 
   File.write(cask_path, content)
