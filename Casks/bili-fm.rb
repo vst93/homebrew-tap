@@ -1,9 +1,9 @@
 cask "bili-fm" do
   arch arm: "apple-silicon", intel: "intel"
 
-  version "3.1.2"
-  sha256 arm:   "cec0effff805be115c2386b7d3c3660bfd21f28f01bf76bfb4eb9db38c1af02e",
-         intel: "281d639fbfac2640752f63d93f804c375233b460285634608a7c70ad72431598"
+  version "3.1.16"
+  sha256 arm:   "5676c414cd8e94678a263fd775c61866b1ad9fcb1806f7b48d6aab647945cb44",
+         intel: "fcdbb28073cdfd2a3b9a3dc8b46592b4914d338edfeaada8386e3f2b13fc3f74"
 
   url "https://github.com/vst93/bili-fm/releases/download/mygo-v#{version}/bili-FM-#{version}-macos-#{arch}.dmg"
   name "bili-fm"
